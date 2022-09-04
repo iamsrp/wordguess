@@ -47,15 +47,15 @@ class WordGuess():
         "NANY", "NAHF", "NEFR", "NFF", "NFFUNG", "OYNPXONYY", "OYNPXYVFG",
         "OVGPU", "OYBJWBO", "OBBOF", "OHTTRE", "PUVAX", "PUVAXL", "PYVG",
         "PYVGBEVF", "PYVGF", "PBPX", "PBBA", "PBPXFHPXRE", "PENC", "PHZ",
-        "PHZF", "PHAAVYVATHF", "PHAG", "PHAGRQ", "PHAGF", "QVPX", "QVPXF",
-        "QBTTVAT", "QBAT", "QBBPU", "RWNPHYNGR", "RWNPHYNGRQ", "RWNPHYNGRF",
-        "RWNPHYNGVAT", "RWNPHYNGVATF", "RWNPHYNGVBA", "SNT", "SNTTBG", "SRYPU",
-        "SRYPUVAT", "SRYYNGR", "SRYYNGVB", "SVFGVAT", "SHPX", "SHPXRQ",
-        "SHPXRE", "SHPXVAT", "SHPXF", "TNATONAT", "TNLYBEQ", "TLC", "TLCCRQ",
-        "UBZB", "UBEAL", "VAPRFG", "WNC", "WVMM", "ZNFGHEONGR", "ANMV", "ARTEB",
-        "ARTEBF", "AVTTRE", "AVCCYR", "AVCCYRF", "AVC", "BETNFZ", "BETNFZF",
-        "BETL", "CNRQB", "CRAVF", "CVFF", "CBBS", "CBEA", "CBEAB", "CEVPX",
-        "CEVPXF", "CHOR", "CHORF", "CHFFL", "CHFFVRF", "DHRRE", "DHRREF",
+        "PHZZVAT", "PHZF", "PHAAVYVATHF", "PHAG", "PHAGRQ", "PHAGF", "QVPX",
+        "QVPXF", "QBTTVAT", "QBAT", "QBBPU", "RWNPHYNGR", "RWNPHYNGRQ",
+        "RWNPHYNGRF", "RWNPHYNGVAT", "RWNPHYNGVATF", "RWNPHYNGVBA", "SNT",
+        "SNTTBG", "SRYPU", "SRYPUVAT", "SRYYNGR", "SRYYNGVB", "SVFGVAT", "SHPX",
+        "SHPXRQ", "SHPXRE", "SHPXVAT", "SHPXF", "TNATONAT", "TNLYBEQ", "TLC",
+        "TLCCRQ", "UBZB", "UBEAL", "VAPRFG", "WNC", "WVMM", "ZNFGHEONGR", "ANMV",
+        "ARTEB", "ARTEBF", "AVTTRE", "AVCCYR", "AVCCYRF", "AVC", "BETNFZ",
+        "BETNFZF", "BETL", "CNRQB", "CRAVF", "CVFF", "CBBS", "CBEA", "CBEAB",
+        "CEVPX", "CEVPXF", "CHOR", "CHORF", "CHFFL", "CHFFVRF", "DHRRE", "DHRREF",
         "DHVZ", "ENCR", "ENCRF", "ENCVAT", "ENCVFG", "FPEBGHZ", "FRZRA", "FRK",
         "FRKL", "FUNT", "FUNTTVAT", "FUVG", "FUVGF", "FUVGGL", "FUNG", "FYNIR",
         "FYHG", "FYHGF", "FBQBZVMR", "FBQBZBL", "FCHAX", "GVGF", "GVGGVRF",
@@ -69,7 +69,8 @@ class WordGuess():
                  length     : int,
                  tries      : int,
                  words_file : str,
-                 accessible : bool) -> None:
+                 accessible : bool,
+                 accented   : bool) -> None:
         """
         Set up the game
         """
@@ -104,11 +105,20 @@ class WordGuess():
                     pass
 
                 # Tidy to be like we like it
-                word = word.strip().upper()
+                word = word.strip()
+                WORD = word.upper()
 
                 # Remember this in self._all_words since we need to care about them
                 # for checking plurals etc.
-                self._all_words.add(word)
+                self._all_words.add(WORD)
+
+                # Ignore proper names and abbreviations, these will start with a
+                # capital letter
+                if len(word) > 0 and 'A' <= word[0] <= 'Z':
+                    continue
+
+                # Now we want it all uppercase
+                word = WORD
 
                 # Check that it's what we want. We avoid offensive words and
                 # ones which look like they are plurals, past tense, etc. Some
@@ -117,6 +127,7 @@ class WordGuess():
                 if (self._rot13upper(word) not in self._OFFENSIVE_WORDS and
                     word.isalpha()                                      and
                     len(word) == length                                 and
+                    (accented or all('A' <= c <= 'Z' for c in word))    and
                     not (word[-1:] in [ 'D',  'R',  'S', 'Y'] and
                          word[:-1] in self._all_words)                  and
                     not (word[-2:] in ['ED', 'ER', 'ES', 'LY'] and
@@ -131,6 +142,7 @@ class WordGuess():
 
                     # And save all its letters in the set of known ones
                     self._letters.update(word)
+
         print("  Loading done!")
 
         # All the letters, but in sorted order
@@ -386,7 +398,7 @@ class WordGuess():
         curses.curs_set(True)
         curses.endwin()
 
-        print("Shut down WordGuess.")
+        print("Shutting down WordGuess.")
         print()
 
 
@@ -430,10 +442,10 @@ class WordGuess():
 
 
     def _set_board_char(self,
-                  x         : int,
-                  y         : int,
-                  character : str,
-                  pair      : int):
+                        x         : int,
+                        y         : int,
+                        character : str,
+                        pair      : int):
         """
         Set a character using the given params on the board.
 
@@ -560,6 +572,8 @@ class WordGuess():
 if __name__ == '__main__':
     # Parse the command line args
     parser = argparse.ArgumentParser(description='Guess the words.')
+    parser.add_argument('--accented', action='store_true',
+                        help='Allow accented words')
     parser.add_argument('--accessible', action='store_true',
                         help='Change the colours to avoid red/green pairs')
     parser.add_argument('--dictionary', type=str, default='/usr/share/dict/words',
@@ -573,7 +587,8 @@ if __name__ == '__main__':
     game = WordGuess(args.length,
                      args.tries,
                      args.dictionary,
-                     args.accessible)
+                     args.accessible,
+                     args.accented)
 
     # And play
     exception = None
