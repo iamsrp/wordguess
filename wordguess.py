@@ -5,6 +5,7 @@ Guess the words, on the command line.
 
 import argparse
 import curses
+import math
 import os
 import random
 import time
@@ -111,6 +112,11 @@ class WordGuess():
                 # Remember this in self._all_words since we need to care about them
                 # for checking plurals etc.
                 self._all_words.add(WORD)
+
+                # Print out progress. Printing is _slow_ so not too much.
+                count = len(self._all_words)
+                if count & 0x3ff == 0:
+                    print(f"  Loaded {count} words\r", end='', flush=True)
 
                 # Ignore proper names and abbreviations, these will start with a
                 # capital letter
@@ -526,40 +532,41 @@ class WordGuess():
         count = len(self._sorted_letters)
 
         # How much room top to bottom
-        max_y = min(self._tries,
-                    self._max_y - self._BOARD_TOP - self._MESSAGE_OFFSET - 3) // 2
+        max_y = self._tries
 
-        # We will draw these and two columns and we want each column set to be a
-        # little left of the board.
-        off_left  = (self._max_x + self._length) // 2 - 6
-        off_right = (self._max_x + self._length) // 2 + 6
-
-        # How many columns? Ensure it's a even number
-        num_cols = count // max(max_y, 1)
+        # How many columns on each side? Ensure it's a even number for symmetry.
+        num_cols = math.floor(2 * count / max(max_y, 1))
         if num_cols == 0:
             num_cols = 2
         elif num_cols % 2 == 1:
-            num_cols += 1
+            num_cols -= 1
+
+        # We will draw these and two columns and we want each column set to be a
+        # little away from the board (i.e. a bit of padding).
+        x_width = 2 * num_cols + int(math.ceil(self._length / 2))
+        off_left  = int(math.floor(self._max_x / 2)) - x_width
+        off_right = int(math.ceil (self._max_x / 2)) + 3
 
         # How long should each column be?
-        col_length = count // num_cols
+        col_length = math.floor(count / num_cols)
 
         # Figure out the index of our letter in the sorted set
         index = self._sorted_letters.index(letter)
 
         # The coordinates within the columns
-        (x, y) = divmod(index, col_length)
+        x = index %  num_cols
+        y = index // num_cols
 
         # We want gaps between the columns
         x *= 2
 
         # Now place it
-        if x <= num_cols:
+        if x < num_cols:
             # Left side
-            cx = off_left  - 2 * num_cols + x + 2
+            cx = off_left  + x
         else:
             # Right side
-            cx = off_right - 1 * num_cols + x - 2
+            cx = off_right + x
         cy = self._BOARD_TOP + 2 * y
 
         # And place it
