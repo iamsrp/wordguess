@@ -33,10 +33,13 @@ class WordGuess():
     _MESSAGE_PAIR = 7
 
     # Text constants
-    _TITLE  = "Word Guess!"
-    _EMPTY  = '?'
-    _ESCAPE =  27 # ASCII value
-    _DEL    = 127 # ASCII value
+    _TITLE   = "Word Guess!"
+    _EMPTY   = '?'
+    _NEWLINE =  10 # ASCII value
+    _RETURN  =  13 # ASCII value
+    _ESCAPE  =  27 # ASCII value
+    _SPACE   =  32 # ASCII value
+    _DEL     = 127 # ASCII value
 
     # Placement of things
     _BOARD_TOP      = 5 # From the top
@@ -230,9 +233,18 @@ class WordGuess():
             except QuitException:
                 return
 
-            # Wait for the player to press a key. If it's escape then be done.
-            if self._scr.getch() == self._ESCAPE:
-                return
+            # Wait for the player to press a non-control key but, if it's
+            # escape, then be done. (This avoid repaint signals from triggering
+            # the change.)
+            ch = self._scr.getch()
+            while True:
+                self._message(f'CHAR IS {ch}')
+                if ch  == self._ESCAPE:
+                    return
+                elif ch >= self._SPACE or ch in (self._NEWLINE, self._RETURN):
+                    break
+                else:
+                    ch = self._scr.getch()
 
 
     def _play_round(self,
