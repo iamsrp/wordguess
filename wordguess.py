@@ -238,10 +238,10 @@ class WordGuess():
             # the change.)
             ch = self._scr.getch()
             while True:
-                self._message(f'CHAR IS {ch}')
                 if ch  == self._ESCAPE:
                     return
-                elif ch >= self._SPACE or ch in (self._NEWLINE, self._RETURN):
+                elif (self._SPACE <= ch <= self._DEL) or \
+                     ch in (self._NEWLINE, self._RETURN):
                     break
                 else:
                     ch = self._scr.getch()
