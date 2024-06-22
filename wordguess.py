@@ -3,6 +3,8 @@
 Guess the words, on the command line.
 """
 
+from unidecode import unidecode
+
 import argparse
 import curses
 import math
@@ -136,7 +138,6 @@ class WordGuess():
                 if (self._rot13upper(word) not in self._OFFENSIVE_WORDS and
                     word.isalpha()                                      and
                     len(word) == length                                 and
-                    (accented or all('A' <= c <= 'Z' for c in word))    and
                     not (word[-1:] in [ 'D',  'R',  'S', 'Y'] and
                          word[:-1] in self._all_words)                  and
                     not (word[-2:] in ['ED', 'ER', 'ES', 'LY'] and
@@ -146,6 +147,11 @@ class WordGuess():
                     not (word[-3:] == 'ING' and
                          ((word[:-3])       in self._all_words or
                           (word[:-3] + 'E') in self._all_words))):
+                    # If we are not accepting accented words then turn them into
+                    # ASCII
+                    if not accented and not all('A' <= c <= 'Z' for c in word):
+                        word = unidecode(word)
+                    
                     # This is a word which we want so we remember it
                     self._words.append(word)
 
