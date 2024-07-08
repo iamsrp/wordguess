@@ -110,6 +110,11 @@ class WordGuess():
                 except UnicodeDecodeError:
                     pass
 
+                # If we are not accepting accented words then turn them into
+                # ASCII
+                if not accented and not all('A' <= c <= 'Z' for c in word):
+                    word = unidecode(word)
+                    
                 # Tidy to be like we like it
                 word = word.strip()
                 WORD = word.upper()
@@ -147,11 +152,6 @@ class WordGuess():
                     not (word[-3:] == 'ING' and
                          ((word[:-3])       in self._all_words or
                           (word[:-3] + 'E') in self._all_words))):
-                    # If we are not accepting accented words then turn them into
-                    # ASCII
-                    if not accented and not all('A' <= c <= 'Z' for c in word):
-                        word = unidecode(word)
-                    
                     # This is a word which we want so we remember it
                     self._words.append(word)
 
